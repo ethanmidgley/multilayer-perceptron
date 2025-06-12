@@ -8,6 +8,8 @@ class Input:
         self.next_layer = None
         self.layer_number = None
 
+        self.is_trainable = False
+
         self.a = []
 
     def shape(self):
@@ -18,13 +20,13 @@ class Input:
         self.next_layer = next_layer
         self.prev_layer = previous_layer
 
-    def feed(self, inputs):
+    def feed(self, inputs, training):
 
         # self.a = np.dot(np.array(inputs), 1)
         self.a = np.array(inputs)
 
         if self.next_layer is not None:
-            return self.next_layer.feed(self.a)
+            return self.next_layer.feed(self.a, training)
 
         return self.a
 
