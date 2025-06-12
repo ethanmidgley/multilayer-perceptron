@@ -57,3 +57,36 @@ class BinaryCrossEntropy:
         )
         # Normalize gradient
         return grad / samples
+
+
+class CategoricalCrossEntropy:
+
+    @staticmethod
+    def calculate(y_true, y_pred):
+
+        samples = len(y_pred)
+
+        y_pred_clipped = np.clip(y_pred, 1e-7, 1 - 1e-7)
+
+        if len(y_true.shape) == 1:
+            correct_confidences = y_pred_clipped[range(samples), y_true]
+        elif len(y_true.shape) == 2:
+            correct_confidences = np.sum(y_pred_clipped * y_true, axis=1)
+
+        negative_log = -np.log(correct_confidences)
+        return negative_log
+
+    @staticmethod
+    def deriv(y_true, y_pred):
+
+        samples = len(y_pred)
+
+        labels = len(y_pred[0])
+
+        y_pred_clipped = np.clip(y_pred, 1e-7, 1 - 1e-7)
+
+        if len(y_true.shape) == 1:
+            y_true = np.eye(labels, dtype=int)[y_true]
+
+        grad = -y_true / y_pred_clipped
+        return grad / samples
