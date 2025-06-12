@@ -1,4 +1,8 @@
 import math
+import pickle
+
+import matplotlib.pyplot as plt
+import numpy as np
 
 from Metrics import MSE
 from Optimisers import SGD
@@ -12,6 +16,7 @@ class Model:
         self.optimiser = SGD()
         self.layers = []
         self.trainable_layers = []
+        self.costs = []
 
     def add(self, layer):
         """Adds a layer to the model"""
@@ -23,12 +28,15 @@ class Model:
 
         self.layers.append(layer)
 
-    def compile(self, metric, optimiser=SGD()):
+    def compile(self, metric, optimiser=None):
 
         assert len(self.layers) > 1
 
         self.is_compiled = True
-        self.optimiser = optimiser
+
+        if optimiser is not None:
+            self.optimiser = optimiser
+
         self.metric = metric
 
         for i, layer in enumerate(self.layers):
@@ -51,10 +59,12 @@ class Model:
         assert self.is_compiled
 
         train_steps = math.ceil(len(rows) / batch_size)
+        self.costs = []
 
-        for _ in range(epochs):
+        for epoch in range(epochs):
 
-            self.optimiser.new_pass()
+            self.optimiser.new_pass(epoch)
+            total_batch_cost = 0
 
             for i in range(train_steps):
 
@@ -66,6 +76,8 @@ class Model:
                 yhat = self.feed_batch(batch_x, training=True)
                 _cost = self.metric.calculate(batch_y, yhat)
 
+                total_batch_cost += np.mean(_cost)
+
                 # Calculate cost derivative and start backwards propagation
                 cost_gradient = self.metric.deriv(batch_y, yhat)
                 self.layers[-1].backprop(cost_gradient)
@@ -74,3 +86,24 @@ class Model:
                 for trainable in self.trainable_layers:
                     self.optimiser.optimise_layer(trainable)
                 self.optimiser.post_optimise()
+
+            epoch_cost = total_batch_cost / train_steps
+            self.costs.append(epoch_cost)
+
+            print(f"Epoch {epoch +1 } cost: {epoch_cost}")
+
+    def plot_cost(self):
+        plt.plot(self.costs)
+        plt.show()
+
+    def save(self, dst_file="model.data"):
+        with open(dst_file, "wb") as f:
+            pickle.dump(self, f)
+
+    @staticmethod
+    def load(filename):
+        with open(filename, "rb") as f:
+            # The protocol version used is detected automatically, so we do not
+            # have to specify it.
+            model = pickle.load(f)
+            return model
