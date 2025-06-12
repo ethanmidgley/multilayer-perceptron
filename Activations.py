@@ -27,7 +27,7 @@ class Linear:
 
     @staticmethod
     def backprop(z_value, gradient_vectors):
-        return RELU.deriv(z_value) * gradient_vectors
+        return Linear.deriv(z_value) * gradient_vectors
 
 
 class Sigmoid:
